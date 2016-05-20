@@ -1,53 +1,39 @@
 "use strict";
 
-var ledgerApp = angular.module("ledgerApp", []);
+var ledgerApp = angular.module("ledgerApp");
 
-ledgerApp.controller("mainCtrl", function ($scope) {
-	$scope.newTransaction = {};
-	$scope.transactions = [ 
-		{
-
-			credit: 25.00,
-			debit: "",
-			description: "cell phone",
-			notes: "",
-			date: "04/26/16"
-		},
-		{
-			credit: "",	
-			debit: 15.00,
-			description: "lunch",
-			notes: "",
-			date: "04/24/16"
-		},
-		{
-			credit: "",
-			debit: 11.00,
-			description: "uber",
-			notes: "sf",
-			date: "04/22/16"
-		},
-		{
-			credit: 35.00,
-			debit: "",
-			description: "dog walking",
-			notes: "",
-			date: "04/23/16"
-		}
-	];
+ledgerApp.controller("mainCtrl", function ($scope, Transaction) {
 	
-	$scope.pushTransaction = function () {
-		if($scope.newTransaction.transType === "credit"){
-			$scope.newTransaction.credit = $scope.newTransaction.amount;
-			$scope.totalDeposits += $scope.newTransaction.amount;
-		} else if ($scope.newTransaction.transType === "debit"){
-			$scope.newTransaction.debit = $scope.newTransaction.amount;
-			$scope.totalWithdrawals += $scope.newTransaction.amount;
-		}
+	$scope.newTransaction = {};
+	$scope.transactions = [];
+	
+	$scope.getAll = function () {
+		Transaction.getAll()
+		.then(function (res) {
+			$scope.transactions = res.data;
+		})
+		.catch(function (err) {
+			console.log("Error:", err)
+		})
+	}
+
+	$scope.getAll();
+
+	$scope.create = function () {
+
+		//call services
+		Transaction.create($scope.newTransaction)
+		.then(function (res) {
+		})
+		.catch(function (err) {
+			console.log("Error:", err)
+		});
+	
+		//POST error even tho added to db, null obj?
 
 		$scope.transactions.push($scope.newTransaction)
-		$scope.newTransaction = {};
-		
+		$scope.newTransaction = null;
+			
 	}
 
 
@@ -108,9 +94,18 @@ ledgerApp.controller("mainCtrl", function ($scope) {
 	}
 
 	$scope.delete = function (transaction){
-		$scope.indexToDelete = $scope.transactions.indexOf(transaction);
-		$scope.transactions.splice($scope.indexToDelete, 1);
-		$scope.findTotal();
+
+		Transaction.delete(transaction.id)
+		.then(function (transaction) {
+			$scope.indexToDelete = $scope.transactions.indexOf(transaction);
+			$scope.transactions.splice($scope.indexToDelete, 1);
+			$scope.findTotal();
+		})
+		.catch(function (err) {
+			if (err) {
+				console.log("Error while deleting:", err)
+			}
+		})
 	}
 
 	$scope.sortBy = function(order){
